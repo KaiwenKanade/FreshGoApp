@@ -8,7 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions // Import tambahan
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -20,8 +20,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType // Import tambahan
-import androidx.compose.ui.text.input.PasswordVisualTransformation // Import tambahan
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.freshgoapp.data.Local.User
@@ -34,18 +34,21 @@ fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onBackToLogin: () -> Unit,
     insertUser: suspend (User) -> Unit,
-    clearInventory: suspend () -> Unit // Fungsi untuk mereset Home Screen
+    clearInventory: suspend () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var pin by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
-    var gender by remember { mutableStateOf("Laki-laki") }
     var address by remember { mutableStateOf("") }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
 
+    // State khusus untuk Dropdown Gender
+    var gender by remember { mutableStateOf("Laki-laki") } // Nilai default
+    var expanded by remember { mutableStateOf(false) } // Untuk mengatur buka/tutup menu
+    val genderOptions = listOf("Laki-laki", "Perempuan") // Pilihan baku
+
     val coroutineScope = rememberCoroutineScope()
 
-    // Launcher untuk memilih foto dari Galeri
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri -> photoUri = uri }
@@ -64,7 +67,6 @@ fun RegisterScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Pemilih Foto Profil
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -92,20 +94,54 @@ fun RegisterScreen(
             OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Kolom Password yang sudah disempurnakan
             OutlinedTextField(
                 value = pin,
                 onValueChange = { pin = it },
                 label = { Text("Kata Sandi (Password)") },
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation(), // Ubah huruf jadi titik-titik
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password) // Keyboard password
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nama Lengkap") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(value = gender, onValueChange = { gender = it }, label = { Text("Gender (Laki-laki/Perempuan)") }, modifier = Modifier.fillMaxWidth())
+
+
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = gender,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Gender") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                )
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    genderOptions.forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = { Text(selectionOption) },
+                            onClick = {
+                                gender = selectionOption // Set value
+                                expanded = false // Tutup menu
+                            }
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Alamat") }, modifier = Modifier.fillMaxWidth())
 
@@ -114,11 +150,8 @@ fun RegisterScreen(
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        // 1. Simpan user ke Database
                         insertUser(User(email = email, pin = pin, name = name, gender = gender, address = address, photoUri = photoUri?.toString() ?: ""))
-                        // 2. Kosongkan Home Screen (hapus data inventory lama)
                         clearInventory()
-                        // 3. Pindah ke Home
                         onRegisterSuccess()
                     }
                 },

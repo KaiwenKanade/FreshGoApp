@@ -1,6 +1,10 @@
 package com.example.freshgoapp.ui.profile
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,20 +22,29 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage // Untuk menampilkan foto profil
-import com.example.freshgoapp.data.Local.User // Mengambil model User dari database
+import coil.compose.AsyncImage
+import com.example.freshgoapp.data.Local.User
 import com.example.freshgoapp.ui.theme.PrimaryFigmaGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    user: User?, // Parameter baru untuk menerima data database
+    user: User?,
     selectedLanguage: String,
     onBackClick: () -> Unit,
-    onSignOutClick: () -> Unit
+    onSignOutClick: () -> Unit,
+    onPhotoChanged: (String) -> Unit // <-- PARAMETER BARU UNTUK MENYIMPAN FOTO
 ) {
-    // Mengambil inisial nama (Misal: "Budi Santoso" jadi "BS")
     val initials = user?.name?.split(" ")?.joinToString("") { it.take(1) }?.take(2)?.uppercase() ?: "U"
+
+    // ---> LOGIKA MEMBUKA GALERI HP <---
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            onPhotoChanged(uri.toString()) // Kirim URI foto baru ke database
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -49,16 +62,22 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color.White)
+                // ---> FIX DARK MODE <---
+                .background(MaterialTheme.colorScheme.background)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Avatar Profil (Menampilkan Foto jika ada, Inisial jika tidak ada)
+
+            // ---> FOTO PROFIL SEKARANG BISA DIKLIK <---
             Box(
                 modifier = Modifier
                     .size(100.dp)
                     .clip(CircleShape)
-                    .background(PrimaryFigmaGreen.copy(alpha = 0.1f)),
+                    .background(PrimaryFigmaGreen.copy(alpha = 0.1f))
+                    .clickable {
+                        // Buka galeri saat diklik
+                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 if (!user?.photoUri.isNullOrEmpty()) {
@@ -71,17 +90,26 @@ fun ProfileScreen(
                 } else {
                     Text(initials, fontSize = 36.sp, fontWeight = FontWeight.Bold, color = PrimaryFigmaGreen)
                 }
+
+                // Tambahan Ikon Edit transparan agar user tahu bisa diklik
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit Photo", tint = Color.White)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Nama dari Database
-            Text(user?.name ?: "Guest", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            // FIX DARK MODE untuk Teks Nama
+            Text(user?.name ?: "Guest", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
             Text(user?.email ?: "Belum ada email", fontSize = 14.sp, color = Color.Gray)
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Detail Informasi dari Database
             Column(modifier = Modifier.fillMaxWidth()) {
                 ProfileInfoItem(Icons.Default.Email, "Email", user?.email ?: "-")
                 HorizontalDivider(color = Color(0xFFEEEEEE), modifier = Modifier.padding(vertical = 12.dp))
@@ -94,7 +122,6 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Tombol Sign Out
             Button(
                 onClick = onSignOutClick,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -124,7 +151,8 @@ fun ProfileInfoItem(icon: ImageVector, label: String, value: String) {
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(label, fontSize = 12.sp, color = Color.Gray)
-            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            // FIX DARK MODE: Teks value
+            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
         }
     }
 }

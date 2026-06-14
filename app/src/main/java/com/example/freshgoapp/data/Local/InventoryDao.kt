@@ -13,7 +13,6 @@ interface InventoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItem(item: InventoryItem)
 
-    // INI ADALAH FUNGSI EDIT (E DALAM BREAD)
     @Update
     suspend fun updateItem(item: InventoryItem)
 

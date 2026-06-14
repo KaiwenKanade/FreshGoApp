@@ -1,6 +1,6 @@
 package com.example.freshgoapp.ui.recipe
 
-import androidx.compose.foundation.clickable // <-- IMPORT BARU UNTUK FITUR KLIK
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,10 +25,16 @@ fun RecipeScreen(
     ingredientName: String,
     selectedLanguage: String,
     onBackClick: () -> Unit,
-    onRecipeClick: (String) -> Unit, // <-- PARAMETER BARU UNTUK MENANGKAP ID RESEP
+    onRecipeClick: (String) -> Unit,
     viewModel: RecipeViewModel = viewModel()
 ) {
-    LaunchedEffect(ingredientName) { viewModel.fetchRecipes(ingredientName) }
+    // ---> PERBAIKAN ROTASI LAYAR ADA DI SINI <---
+    LaunchedEffect(ingredientName) {
+        if (viewModel.uiState.value !is RecipeUiState.Success) {
+            viewModel.fetchRecipes(ingredientName)
+        }
+    }
+
     val state by viewModel.uiState.collectAsState()
 
     val titleText = if (selectedLanguage == "EN") "Cooking Ideas:" else "Ide Memasak:"
@@ -62,9 +68,6 @@ fun RecipeScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    // --- KABEL NAVIGASI MENUJU DETAIL DIPASANG DI SINI ---
-                                    // Catatan: Jika properti ID di model Recipe-mu bernama lain (misal: idMeal),
-                                    // silakan ganti 'recipe.id' di bawah ini menjadi 'recipe.idMeal'
                                     .clickable { onRecipeClick(recipe.id.toString()) },
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)

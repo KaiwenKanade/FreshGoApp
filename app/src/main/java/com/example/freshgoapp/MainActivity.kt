@@ -4,7 +4,13 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -30,6 +36,15 @@ import com.example.freshgoapp.ui.setting.SettingsScreen
 import com.example.freshgoapp.ui.setting.LanguageScreen
 import com.example.freshgoapp.ui.profile.ProfileScreen
 import com.example.freshgoapp.ui.onboarding.OnboardingScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.navigation.navDeepLink
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,16 +57,17 @@ class MainActivity : ComponentActivity() {
         val inventoryDao = db.inventoryDao()
 
         setContent {
-            var isDarkTheme by remember { mutableStateOf(false) }
+
+            var isDarkTheme by rememberSaveable { mutableStateOf(false) }
 
             FreshGoAppTheme(darkTheme = isDarkTheme) {
                 val navController = rememberNavController()
-                var appLanguage by remember { mutableStateOf("EN") }
+
+                var appLanguage by rememberSaveable { mutableStateOf("EN") }
 
                 val context = LocalContext.current
                 val lifecycleOwner = LocalLifecycleOwner.current
 
-                // --- ANTI WHITE SCREEN (SPAM CLICK PROTECTOR) ---
                 val safePopBackStack: () -> Unit = {
                     if (navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
                         navController.popBackStack()
@@ -123,6 +139,53 @@ class MainActivity : ComponentActivity() {
 
                     composable("home") {
                         val items by homeViewModel.inventoryItems.collectAsState(initial = emptyList())
+                        val localContext = LocalContext.current
+
+                        var hasNotificationPermission by remember {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                mutableStateOf(
+                                    ContextCompat.checkSelfPermission(
+                                        localContext,
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                )
+                            } else {
+                                mutableStateOf(true)
+                            }
+                        }
+
+                        val permissionLauncher = rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.RequestPermission(),
+                            onResult = { isGranted ->
+                                hasNotificationPermission = isGranted
+                            }
+                        )
+
+                        LaunchedEffect(Unit) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
+                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
+
+                        LaunchedEffect(items, hasNotificationPermission) {
+                            if (items.isNotEmpty() && hasNotificationPermission) {
+                                val currentTime = System.currentTimeMillis()
+                                val twoDaysInMillis = 2 * 24 * 60 * 60 * 1000L
+
+                                val expiringItem = items.find { item ->
+                                    val timeDifference = item.expiryDate - currentTime
+                                    timeDifference in 0..twoDaysInMillis
+                                }
+
+                                expiringItem?.let {
+                                    com.example.freshgoapp.utils.NotificationHelper.showExpiryNotification(
+                                        context = localContext,
+                                        itemName = it.name
+                                    )
+                                }
+                            }
+                        }
+
                         HomeScreen(
                             items = items,
                             selectedLanguage = appLanguage,
@@ -157,19 +220,35 @@ class MainActivity : ComponentActivity() {
                             selectedLanguage = appLanguage,
                             onLanguageNavigate = { navController.navigate("language") { launchSingleTop = true } },
                             onProfileNavigate = { navController.navigate("profile") { launchSingleTop = true } },
+                            // ---> TAMBAHAN FUNGSI LOGOUT YANG BENAR <---
+                            onLogoutClick = {
+                                navController.navigate("login") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            },
                             onBackClick = { safePopBackStack() }
                         )
                     }
 
                     composable("profile") {
                         var currentUser by remember { mutableStateOf<User?>(null) }
+                        val coroutineScope = rememberCoroutineScope()
+
                         LaunchedEffect(Unit) { currentUser = userDao.getCurrentUser() }
 
                         ProfileScreen(
                             user = currentUser,
                             selectedLanguage = appLanguage,
                             onBackClick = { safePopBackStack() },
-                            onSignOutClick = { navController.navigate("login") { popUpTo(0) { inclusive = true } } }
+                            onSignOutClick = { navController.navigate("login") { popUpTo(0) { inclusive = true } } },
+                            onPhotoChanged = { newUri ->
+                                currentUser = currentUser?.copy(photoUri = newUri)
+                                currentUser?.let { updatedUser ->
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        userDao.updateUser(updatedUser)
+                                    }
+                                }
+                            }
                         )
                     }
 
@@ -208,14 +287,19 @@ class MainActivity : ComponentActivity() {
 
                         if (itemId != null) {
                             val item by homeViewModel.getInventoryItemById(itemId).collectAsState(initial = null)
-                            item?.let {
+
+                            if (item != null) {
                                 ItemDetailScreen(
-                                    item = it,
+                                    item = item!!,
                                     selectedLanguage = appLanguage,
                                     onBackClick = { safePopBackStack() },
                                     onEditClick = { id -> navController.navigate("edit/$id") { launchSingleTop = true } },
                                     onDeleteClick = { id -> homeViewModel.deleteItem(id); safePopBackStack() }
                                 )
+                            } else {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
                             }
                         }
                     }
@@ -225,20 +309,24 @@ class MainActivity : ComponentActivity() {
                         if (itemId != null) {
                             val itemToEdit by homeViewModel.getInventoryItemById(itemId).collectAsState(initial = null)
 
-                            itemToEdit?.let { existingItem ->
+                            if (itemToEdit != null) {
                                 AddItemScreen(
                                     selectedLanguage = appLanguage,
-                                    itemToEdit = existingItem,
+                                    itemToEdit = itemToEdit,
                                     onSaveClick = { updatedItem ->
                                         addViewModel.saveItem(updatedItem)
                                         safePopBackStack()
                                     },
                                     onBackClick = { safePopBackStack() }
                                 )
+                            } else {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
                             }
                         }
                     }
-                    
+
                     composable("recipe/{ingredientName}") { backStackEntry ->
                         val ingredientName = backStackEntry.arguments?.getString("ingredientName") ?: ""
                         RecipeScreen(
@@ -251,7 +339,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    composable("recipe_detail/{recipeId}") { backStackEntry ->
+                    composable(
+                        route = "recipe_detail/{recipeId}",
+                        deepLinks = listOf(navDeepLink { uriPattern = "freshgo://recipe/{recipeId}" })
+                    ) { backStackEntry ->
                         val recipeId = backStackEntry.arguments?.getString("recipeId") ?: ""
 
                         com.example.freshgoapp.ui.recipe.RecipeDetailScreen(

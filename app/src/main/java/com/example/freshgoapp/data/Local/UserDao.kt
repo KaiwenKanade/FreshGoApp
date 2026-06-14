@@ -3,6 +3,7 @@ package com.example.freshgoapp.data.Local
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update // <-- IMPORT BARU YANG DIBUTUHKAN
 
 @Dao
 interface UserDao {
@@ -16,7 +17,12 @@ interface UserDao {
     // Mengambil data profil yang login
     @Query("SELECT * FROM users ORDER BY id DESC LIMIT 1")
     suspend fun getCurrentUser(): User?
-    //password baru
+
+    // password baru
     @Query("UPDATE users SET pin = :newPin WHERE email = :email")
     suspend fun updatePassword(email: String, newPin: String): Int
+
+    // FUNGSI BARU UNTUK UPDATE PROFIL
+    @Update
+    suspend fun updateUser(user: User)
 }

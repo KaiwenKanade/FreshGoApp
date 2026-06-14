@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions // <-- Import baru
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType // <-- Import baru
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.freshgoapp.data.Local.InventoryItem
@@ -26,11 +28,10 @@ import java.util.*
 @Composable
 fun AddItemScreen(
     selectedLanguage: String,
-    itemToEdit: InventoryItem? = null, 
+    itemToEdit: InventoryItem? = null,
     onSaveClick: (InventoryItem) -> Unit,
     onBackClick: () -> Unit
 ) {
-
 
     val isEditMode = itemToEdit != null
     val txtTitle = if (selectedLanguage == "EN") {
@@ -108,7 +109,7 @@ fun AddItemScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 1. Nama Bahan
+            
             OutlinedTextField(
                 value = name, onValueChange = { name = it },
                 modifier = Modifier.fillMaxWidth(),
@@ -118,7 +119,7 @@ fun AddItemScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. Dropdown Kategori
+
             ExposedDropdownMenuBox(
                 expanded = categoryExpanded,
                 onExpandedChange = { categoryExpanded = !categoryExpanded }
@@ -143,12 +144,20 @@ fun AddItemScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. Baris Jumlah & Satuan
+
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+
                 OutlinedTextField(
-                    value = quantity, onValueChange = { quantity = it },
+                    value = quantity,
+                    onValueChange = { newValue ->
+
+                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                            quantity = newValue
+                        }
+                    },
                     modifier = Modifier.weight(1f),
                     label = { Text(txtQuantity) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), // Memunculkan keyboard angka
                     shape = RoundedCornerShape(12.dp)
                 )
 
@@ -214,7 +223,6 @@ fun AddItemScreen(
 
             Button(
                 onClick = {
-
                     val saveId = itemToEdit?.id ?: 0
                     val oldPurchaseDate = itemToEdit?.purchaseDate ?: System.currentTimeMillis()
 

@@ -26,10 +26,15 @@ fun RecipeDetailScreen(
     recipeId: String,
     selectedLanguage: String,
     onBackClick: () -> Unit,
-    viewModel: RecipeViewModel = viewModel() // <-- KONEKSI KE MESIN DATA DITAMBAHKAN
+    viewModel: RecipeViewModel = viewModel()
 ) {
+    // ---> PERBAIKAN ROTASI LAYAR ADA DI SINI <---
+    LaunchedEffect(recipeId) {
+        if (viewModel.detailUiState.value !is RecipeDetailUiState.Success) {
+            viewModel.fetchRecipeDetail(recipeId)
+        }
+    }
 
-    LaunchedEffect(recipeId) { viewModel.fetchRecipeDetail(recipeId) }
     val state by viewModel.detailUiState.collectAsState()
 
     val txtTitle = if (selectedLanguage == "EN") "Recipe Detail" else "Detail Resep"
@@ -52,16 +57,13 @@ fun RecipeDetailScreen(
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = PrimaryFigmaGreen)
                 }
 
-
                 is RecipeDetailUiState.Error -> {
                     Text(currentStatus.errorMessage, modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.error)
                 }
 
-
                 is RecipeDetailUiState.Success -> {
                     val recipe = currentStatus.recipeDetail
                     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-
 
                         AsyncImage(
                             model = recipe.imageUrl,
@@ -77,7 +79,6 @@ fun RecipeDetailScreen(
                             Text(txtIngredients, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = PrimaryFigmaGreen)
                             Spacer(modifier = Modifier.height(12.dp))
 
-
                             recipe.ingredients.forEach { ingredient ->
                                 Card(
                                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
@@ -92,7 +93,6 @@ fun RecipeDetailScreen(
                                     }
                                 }
                             }
-
 
                             Spacer(modifier = Modifier.height(24.dp))
                             Text(txtInstructions, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = PrimaryFigmaGreen)

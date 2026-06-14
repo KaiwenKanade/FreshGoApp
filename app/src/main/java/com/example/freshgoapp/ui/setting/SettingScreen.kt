@@ -2,7 +2,9 @@ package com.example.freshgoapp.ui.setting
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -16,18 +18,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.freshgoapp.data.Local.User // Import User Database
+import com.example.freshgoapp.data.Local.User
+import com.example.freshgoapp.ui.theme.CriticalRed
 import com.example.freshgoapp.ui.theme.PrimaryFigmaGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    user: User?, // Parameter untuk mengambil nama dari database
-    isDarkTheme: Boolean, // Parameter untuk mengecek tema saat ini
-    onThemeToggle: () -> Unit, // Fungsi ketika tombol bulan ditekan
+    user: User?,
+    isDarkTheme: Boolean,
+    onThemeToggle: () -> Unit,
     selectedLanguage: String,
     onLanguageNavigate: () -> Unit,
     onProfileNavigate: () -> Unit,
+    onLogoutClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     Scaffold(
@@ -40,9 +44,7 @@ fun SettingsScreen(
                 actions = {
                     IconButton(onClick = { }) { Icon(Icons.Default.Notifications, null, tint = PrimaryFigmaGreen) }
 
-                    // TOMBOL DARK MODE
                     IconButton(onClick = onThemeToggle) {
-                        // Ikon berubah jadi Matahari jika sedang mode gelap
                         Icon(
                             imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
                             contentDescription = "Toggle Theme",
@@ -52,20 +54,18 @@ fun SettingsScreen(
 
                     IconButton(onClick = onProfileNavigate) { Icon(Icons.Default.AccountCircle, null, tint = PrimaryFigmaGreen) }
                 },
-                // Gunakan warna surface dari tema agar bisa menyesuaikan dark mode
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
-        // Ganti Color.White menjadi MaterialTheme.colorScheme.background agar responsif Dark Mode
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            // Ganti Color.Black menjadi MaterialTheme.colorScheme.onBackground
             Text(
                 text = if (selectedLanguage == "EN") "Settings" else "Pengaturan",
                 fontSize = 28.sp,
@@ -76,11 +76,10 @@ fun SettingsScreen(
 
             Text("AKUN", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryFigmaGreen, modifier = Modifier.padding(bottom = 8.dp))
 
-            // MENGGUNAKAN NAMA DARI DATABASE
             SettingRow(
                 icon = Icons.Default.Person,
                 title = if (selectedLanguage == "EN") "My Profile" else "Profil Saya",
-                subtitle = user?.name ?: "Guest" // Nama dinamis dari database!
+                subtitle = user?.name ?: "Guest"
             ) {
                 IconButton(onClick = onProfileNavigate) { Icon(Icons.Default.ChevronRight, null, tint = Color.Gray) }
             }
@@ -95,6 +94,23 @@ fun SettingsScreen(
                 subtitle = if (selectedLanguage == "EN") "English" else "Bahasa Indonesia"
             ) {
                 IconButton(onClick = onLanguageNavigate) { Icon(Icons.Default.ChevronRight, null, tint = Color.Gray) }
+            }
+
+            // ---> TAMBAHAN TOMBOL LOGOUT <---
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = onLogoutClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = CriticalRed.copy(alpha = 0.1f)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Logout, contentDescription = "Logout", tint = CriticalRed)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (selectedLanguage == "EN") "Logout" else "Keluar Akun",
+                    color = CriticalRed,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

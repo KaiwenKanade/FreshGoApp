@@ -3,7 +3,6 @@ package com.example.freshgoapp.ui.setting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -40,13 +39,13 @@ fun LanguageScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color.White)
+                // ---> FIX DARK MODE: Gunakan background dinamis <---
+                .background(MaterialTheme.colorScheme.background)
                 .padding(20.dp)
         ) {
             Text("Choose your preferred language for the app interface.", color = Color.Gray, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Opsi Bahasa Inggris
             LanguageOptionRow(
                 label = "English",
                 isSelected = currentLanguage == "EN",
@@ -55,7 +54,6 @@ fun LanguageScreen(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color(0xFFEEEEEE))
 
-            // Opsi Bahasa Indonesia
             LanguageOptionRow(
                 label = "Bahasa Indonesia",
                 isSelected = currentLanguage == "ID",
@@ -79,7 +77,8 @@ fun LanguageOptionRow(label: String, isSelected: Boolean, onClick: () -> Unit) {
             text = label,
             fontSize = 16.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) PrimaryFigmaGreen else Color.Black
+
+            color = if (isSelected) PrimaryFigmaGreen else MaterialTheme.colorScheme.onBackground
         )
         if (isSelected) {
             Icon(Icons.Default.Check, contentDescription = null, tint = PrimaryFigmaGreen)
