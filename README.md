@@ -2,7 +2,7 @@
 
 Aplikasi manajemen inventaris dapur untuk mengelola stok bahan makanan dan menemukan inspirasi resep masakan secara praktis.
 
-## 📱 Screenshot Aplikasi
+## Screenshot Aplikasi
 | Preview | Login | HomeScreen |
 | :---: | :---: | :---: |
 | <img width="300" src="https://github.com/user-attachments/assets/f13d1628-b7fa-423e-9f08-28abf2f0fac1" /> | <img width="300" src="https://github.com/user-attachments/assets/4b3a0175-7ae7-458a-b67a-3dafd4e7167e" /> | <img width="300" src="https://github.com/user-attachments/assets/eaef8afc-23e7-4a74-973a-9e24d9f46e54" /> |
@@ -19,8 +19,6 @@ Aplikasi manajemen inventaris dapur untuk mengelola stok bahan makanan dan menem
 
 ## Struktur Arsitektur
 Aplikasi ini menerapkan **Clean Architecture** dengan pola **MVVM** untuk memastikan pemisahan *concern* yang jelas:
-
-
 
 * **UI Layer:** Compose Screen & ViewModel (State management).
 * **Domain Layer:** UseCase & Entity (Business Logic).
@@ -44,6 +42,8 @@ Aplikasi ini menerapkan **Clean Architecture** dengan pola **MVVM** untuk memast
 ## Informasi Tambahan
 * **API:** [TheMealDB](https://www.themealdb.com/api.php)
 * **Fitur Tambahan:** Implementasi Error Handling yang robust dan input validation untuk mencegah data korup pada Database lokal.
+* **Smart Expiry Notification:** Aplikasi bisa mengecek barang yang akan kadaluarsa dalam waktu 2 hari. Android 13+ Ready: Sudah dilengkapi dengan sistem Runtime Permission yang secara elegan memunculkan pop-up meminta izin notifikasi kepada pengguna saat pertama kali masuk ke Home.
+* **Custom Scheme Deep Linking (freshgo://):** Pengguna bisa membuka halaman spesifik di dalam aplikasi (seperti Detail Resep) langsung dari luar aplikasi. Mendukung pembukaan lewat Browser (HTML).
 
 ---
 *KaiwenKanade A.K.A Kevin Maleakhi*
