@@ -8,7 +8,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions // Import tambahan
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,9 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType // Import tambahan
 import androidx.compose.ui.text.input.PasswordVisualTransformation // Import tambahan
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.freshgoapp.data.User
+import com.example.freshgoapp.data.Local.User
 import com.example.freshgoapp.ui.theme.PrimaryFigmaGreen
 import kotlinx.coroutines.launch
 

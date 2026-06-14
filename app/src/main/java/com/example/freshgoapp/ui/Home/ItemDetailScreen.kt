@@ -12,12 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.freshgoapp.data.InventoryItem
+import com.example.freshgoapp.data.Local.InventoryItem
 import com.example.freshgoapp.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,7 +31,6 @@ fun ItemDetailScreen(
     onEditClick: (Int) -> Unit,
     onDeleteClick: (Int) -> Unit
 ) {
-    // --- KAMUS TEKS ---
     val txtPurchaseDate = if (selectedLanguage == "EN") "PURCHASE DATE" else "TANGGAL BELI"
     val txtCategory = if (selectedLanguage == "EN") "CATEGORY" else "KATEGORI"
     val txtStorage = if (selectedLanguage == "EN") "Storage Notes" else "Catatan Penyimpanan"
@@ -42,8 +40,9 @@ fun ItemDetailScreen(
     val txtDaysRemaining = if (selectedLanguage == "EN") "Days Remaining" else "Hari Tersisa"
     val txtExpired = if (selectedLanguage == "EN") "Expired" else "Kadaluarsa"
 
-    // Format Tanggal & Hitung Sisa Hari (Gunakan Long agar sinkron)
-    val dateFormatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    // --- OPTIMASI RAM: Simpan objek formatter berat ini ke dalam cache (remember) ---
+    val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
+
     val shelfLifeDays = TimeUnit.MILLISECONDS.toDays(item.expiryDate - System.currentTimeMillis())
     val isExpired = shelfLifeDays < 0
 
@@ -62,9 +61,7 @@ fun ItemDetailScreen(
             CenterAlignedTopAppBar(
                 title = { Text("FreshGo", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                    }
+                    IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
                 }
             )
         }
@@ -73,21 +70,21 @@ fun ItemDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
-                    .background(Color(0xFFF5F5F5)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 Text(text = itemEmoji, fontSize = 100.sp)
             }
 
             Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
-                Text(item.name, fontWeight = FontWeight.Bold, fontSize = 32.sp)
+                Text(item.name, fontWeight = FontWeight.Bold, fontSize = 32.sp, color = MaterialTheme.colorScheme.onBackground)
                 Text("${item.quantity} ${item.unit} • ${item.category}", color = Color.Gray, fontSize = 14.sp)
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -101,14 +98,13 @@ fun ItemDetailScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Sekarang DetailRow sudah ada di bawah
                 DetailRow(icon = Icons.Default.CalendarMonth, label = txtPurchaseDate, value = dateFormatter.format(Date(item.purchaseDate)))
                 Spacer(modifier = Modifier.height(20.dp))
                 DetailRow(icon = Icons.Default.Restaurant, label = txtCategory, value = item.category)
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                Text(txtStorage, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(txtStorage, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Simpan di tempat sejuk dan kering. Pastikan wadah tertutup rapat untuk menjaga kesegaran maksimal.",
@@ -153,16 +149,12 @@ fun ItemDetailScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false }) {
-                        Text(if (selectedLanguage == "EN") "Cancel" else "Batal")
-                    }
+                    TextButton(onClick = { showDeleteDialog = false }) { Text(if (selectedLanguage == "EN") "Cancel" else "Batal") }
                 }
             )
         }
     }
 }
-
-// --- KOMPONEN PENDUKUNG (PASTIKAN ADA) ---
 
 @Composable
 fun ShelfLifeCard(shelfLifeDays: Long, isExpired: Boolean, label: String, subLabel: String) {
@@ -173,16 +165,9 @@ fun ShelfLifeCard(shelfLifeDays: Long, isExpired: Boolean, label: String, subLab
             containerColor = if (isExpired) CriticalRed.copy(alpha = 0.1f) else PrimaryFigmaGreen.copy(alpha = 0.1f)
         )
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(label, color = if (isExpired) CriticalRed else PrimaryFigmaGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            Text(
-                text = String.format("%02d", shelfLifeDays),
-                fontWeight = FontWeight.Bold, fontSize = 72.sp,
-                color = if (isExpired) CriticalRed else PrimaryFigmaGreen
-            )
+            Text(String.format("%02d", shelfLifeDays), fontWeight = FontWeight.Bold, fontSize = 72.sp, color = if (isExpired) CriticalRed else PrimaryFigmaGreen)
             Text(subLabel, color = if (isExpired) CriticalRed else PrimaryFigmaGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
         }
     }
@@ -195,7 +180,7 @@ fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Stri
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(label, fontSize = 11.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-            Text(value, fontSize = 14.sp, color = Color.Black, fontWeight = FontWeight.Medium)
+            Text(value, fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Medium)
         }
     }
 }

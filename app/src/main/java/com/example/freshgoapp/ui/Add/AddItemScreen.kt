@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.freshgoapp.data.InventoryItem
+import com.example.freshgoapp.data.Local.InventoryItem
 import com.example.freshgoapp.ui.theme.PrimaryFigmaGreen
 import java.text.SimpleDateFormat
 import java.util.*
@@ -26,36 +26,63 @@ import java.util.*
 @Composable
 fun AddItemScreen(
     selectedLanguage: String,
+    itemToEdit: InventoryItem? = null, 
     onSaveClick: (InventoryItem) -> Unit,
     onBackClick: () -> Unit
 ) {
-    // --- KAMUS TEKS ---
-    val txtTitle = if (selectedLanguage == "EN") "Add Item" else "Tambah Bahan"
+
+
+    val isEditMode = itemToEdit != null
+    val txtTitle = if (selectedLanguage == "EN") {
+        if (isEditMode) "Edit Item" else "Add Item"
+    } else {
+        if (isEditMode) "Edit Bahan" else "Tambah Bahan"
+    }
+
     val txtCancel = if (selectedLanguage == "EN") "Cancel" else "Batal"
     val txtNameHint = if (selectedLanguage == "EN") "Item Name" else "Nama Bahan"
     val txtCategory = if (selectedLanguage == "EN") "Category" else "Kategori"
     val txtQuantity = if (selectedLanguage == "EN") "Quantity" else "Jumlah"
     val txtUnit = if (selectedLanguage == "EN") "Unit" else "Satuan"
     val txtDateBtn = if (selectedLanguage == "EN") "Expiry Date" else "Tanggal Kadaluarsa"
-    val txtSaveBtn = if (selectedLanguage == "EN") "Save to Fridge" else "Simpan ke Kulkas"
+    val txtSaveBtn = if (selectedLanguage == "EN") {
+        if (isEditMode) "Save Changes" else "Save to Fridge"
+    } else {
+        if (isEditMode) "Simpan Perubahan" else "Simpan ke Kulkas"
+    }
 
-    // --- STATE ---
-    var name by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("") }
+    // --- STATE PENGISIAN OTOMATIS JIKA MODE EDIT ---
+    var name by remember { mutableStateOf(itemToEdit?.name ?: "") }
+
+    // Konversi double (misal 5.0) ke string (menjadi "5.0" atau "5" jika bulat)
+    var quantity by remember {
+        mutableStateOf(
+            itemToEdit?.quantity?.let {
+                if (it % 1.0 == 0.0) it.toInt().toString() else it.toString()
+            } ?: ""
+        )
+    }
 
     // Dropdown States
     var categoryExpanded by remember { mutableStateOf(false) }
     val categories = if (selectedLanguage == "EN") listOf("Food", "Drink", "Snack", "Fruit", "Veggie") else listOf("Makanan", "Minuman", "Camilan", "Buah", "Sayur")
-    var selectedCategory by remember { mutableStateOf(categories[0]) }
+    // Membaca kategori lama atau pilih default
+    var selectedCategory by remember {
+        mutableStateOf(itemToEdit?.category ?: categories[0])
+    }
 
     var unitExpanded by remember { mutableStateOf(false) }
     val units = listOf("Gram", "Kg", "Litre", "Pcs", "Bottle")
-    var selectedUnit by remember { mutableStateOf(units[0]) }
+    var selectedUnit by remember {
+        mutableStateOf(itemToEdit?.unit ?: units[0])
+    }
 
-    // DatePicker States
-    val datePickerState = rememberDatePickerState()
+    // DatePicker States (membaca tanggal lama dari DB)
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = itemToEdit?.expiryDate
+    )
     var showDatePicker by remember { mutableStateOf(false) }
-    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
+    var selectedDateMillis by remember { mutableStateOf(itemToEdit?.expiryDate) }
     val dateFormatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
 
     Scaffold(
@@ -76,7 +103,7 @@ fun AddItemScreen(
         ) {
             // Placeholder Foto
             Box(modifier = Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF5F5F5)), contentAlignment = Alignment.Center) {
-                Text(if (selectedLanguage == "EN") "Add Photo" else "Tambah Foto", color = Color.Gray)
+                Text(if (selectedLanguage == "EN") "Photo Feature is Under Development" else "Fitur Foto Sedang Dikembangkan", color = Color.Gray)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -164,7 +191,7 @@ fun AddItemScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = if (selectedDateMillis != null) dateFormatter.format(Date(selectedDateMillis!!)) else txtDateBtn,
-                        color = if (selectedDateMillis != null) Color.Black else Color.Gray
+                        color = if (selectedDateMillis != null) MaterialTheme.colorScheme.onSurface else Color.Gray
                     )
                 }
             }
@@ -184,16 +211,21 @@ fun AddItemScreen(
             Spacer(modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Tombol Simpan
+
             Button(
                 onClick = {
+
+                    val saveId = itemToEdit?.id ?: 0
+                    val oldPurchaseDate = itemToEdit?.purchaseDate ?: System.currentTimeMillis()
+
                     onSaveClick(
                         InventoryItem(
+                            id = saveId,
                             name = name,
                             category = selectedCategory,
                             quantity = quantity.toDoubleOrNull() ?: 0.0,
                             unit = selectedUnit,
-                            purchaseDate = System.currentTimeMillis(),
+                            purchaseDate = oldPurchaseDate,
                             expiryDate = selectedDateMillis ?: (System.currentTimeMillis() + 604800000)
                         )
                     )

@@ -1,4 +1,4 @@
-package com.example.freshgoapp.data
+package com.example.freshgoapp.data.Local
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -13,7 +13,10 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE email = :email AND pin = :pin LIMIT 1")
     suspend fun login(email: String, pin: String): User?
 
-    // Mengambil data profil yang sedang login
+    // Mengambil data profil yang login
     @Query("SELECT * FROM users ORDER BY id DESC LIMIT 1")
     suspend fun getCurrentUser(): User?
+    //password baru
+    @Query("UPDATE users SET pin = :newPin WHERE email = :email")
+    suspend fun updatePassword(email: String, newPin: String): Int
 }

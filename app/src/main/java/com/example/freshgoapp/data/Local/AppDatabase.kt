@@ -1,19 +1,18 @@
-package com.example.freshgoapp.data
+package com.example.freshgoapp.data.Local
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [InventoryItem::class], version = 1, exportSchema = false)
+// Hanya ada SATU deklarasi @Database yang merangkum semua tabel (Entities)
+@Database(entities = [InventoryItem::class, User::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun inventoryDao(): InventoryDao
 
-    @Database(entities = [InventoryItem::class, User::class], version = 2, exportSchema = false)
-    abstract class AppDatabase : RoomDatabase() {
-        abstract fun inventoryDao(): InventoryDao
-        abstract fun userDao(): UserDao
-    }
+    // Deklarasi DAO yang terhubung ke database ini
+    abstract fun inventoryDao(): InventoryDao
+    abstract fun userDao(): UserDao
+
     companion object {
         @Volatile
         private var Instance: AppDatabase? = null
@@ -23,9 +22,10 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "inventory_database" // Nama file database
+                    "inventory_database" // Nama file database lokal kamu
                 )
-                    .fallbackToDestructiveMigration() // Tambahkan ini agar tidak crash jika skema berubah
+                    // Sangat berguna untuk mencegah crash saat kamu mengubah struktur tabel
+                    .fallbackToDestructiveMigration()
                     .build()
                 Instance = instance
                 instance

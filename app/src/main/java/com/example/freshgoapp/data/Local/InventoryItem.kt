@@ -1,4 +1,4 @@
-package com.example.freshgoapp.data // Sesuaikan dengan nama package Anda!
+package com.example.freshgoapp.data.Local // Sesuaikan dengan nama package Anda!
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

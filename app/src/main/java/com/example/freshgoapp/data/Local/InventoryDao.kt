@@ -1,16 +1,21 @@
-package com.example.freshgoapp.data
+package com.example.freshgoapp.data.Local
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update // <-- IMPORT BARU UNTUK EDIT
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface InventoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItem(item: InventoryItem)
+
+    // INI ADALAH FUNGSI EDIT (E DALAM BREAD)
+    @Update
+    suspend fun updateItem(item: InventoryItem)
 
     @Delete
     suspend fun deleteItem(item: InventoryItem)
@@ -20,6 +25,7 @@ interface InventoryDao {
 
     @Query("SELECT * FROM inventory_items WHERE id = :id")
     fun getItemById(id: Int): Flow<InventoryItem>
+
     @Query("DELETE FROM inventory_items WHERE id = :itemId")
     suspend fun deleteItemById(itemId: Int)
 

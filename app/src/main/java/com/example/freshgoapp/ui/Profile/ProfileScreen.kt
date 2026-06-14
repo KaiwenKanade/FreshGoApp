@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage // Untuk menampilkan foto profil
-import com.example.freshgoapp.data.User // Mengambil model User dari database
+import com.example.freshgoapp.data.Local.User // Mengambil model User dari database
 import com.example.freshgoapp.ui.theme.PrimaryFigmaGreen
 
 @OptIn(ExperimentalMaterial3Api::class)

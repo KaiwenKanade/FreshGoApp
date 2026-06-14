@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.freshgoapp.data.User // Import User Database
+import com.example.freshgoapp.data.Local.User // Import User Database
 import com.example.freshgoapp.ui.theme.PrimaryFigmaGreen
 
 @OptIn(ExperimentalMaterial3Api::class)

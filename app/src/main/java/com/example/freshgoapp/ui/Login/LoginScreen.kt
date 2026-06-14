@@ -1,5 +1,6 @@
 package com.example.freshgoapp.ui.login
 
+import android.content.Context
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -28,15 +30,14 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     selectedLanguage: String,
     onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit, // Parameter navigasi ke halaman register
-    verifyLogin: suspend (String, String) -> Boolean // Parameter untuk cek database
+    onNavigateToRegister: () -> Unit,
+    onNavigateToForgot: () -> Unit, // <-- PARAMETER BARU UNTUK PINDAH LAYAR
+    verifyLogin: suspend (String, String) -> Boolean
 ) {
-    // --- KAMUS TEKS (EN/ID) ---
     val txtWelcome = if (selectedLanguage == "EN") "Welcome Back" else "Selamat Datang"
     val txtSubtitle = if (selectedLanguage == "EN") "Please enter your credentials to continue" else "Silakan masukkan kredensial Anda untuk melanjutkan"
     val lblEmail = "Email"
     val phEmail = if (selectedLanguage == "EN") "Enter your email" else "Masukkan email Anda"
-    // Teks diubah menjadi Password agar sesuai dengan input yang panjang
     val lblPin = if (selectedLanguage == "EN") "Password" else "Kata Sandi"
     val phPin = if (selectedLanguage == "EN") "Enter your password" else "Masukkan kata sandi"
     val txtRemember = if (selectedLanguage == "EN") "Remember me" else "Ingat saya"
@@ -45,12 +46,13 @@ fun LoginScreen(
     val txtNew = if (selectedLanguage == "EN") "New to FreshGo?" else "Baru di FreshGo?"
     val btnCreate = if (selectedLanguage == "EN") "Create an Account" else "Buat Akun"
 
-    // --- STATE ---
-    var email by remember { mutableStateOf("") }
-    var pin by remember { mutableStateOf("") }
-    var checked by remember { mutableStateOf(false) }
-    var isError by remember { mutableStateOf(false) } // State untuk menampilkan pesan error
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("freshgo_prefs", Context.MODE_PRIVATE)
 
+    var email by remember { mutableStateOf(sharedPreferences.getString("saved_email", "") ?: "") }
+    var pin by remember { mutableStateOf("") }
+    var checked by remember { mutableStateOf(sharedPreferences.getBoolean("remember_me", false)) }
+    var isError by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
@@ -58,14 +60,6 @@ fun LoginScreen(
             TopAppBar(
                 title = {
                     Text("FreshGo", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = PrimaryFigmaGreen)
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notification", tint = PrimaryFigmaGreen)
-                    }
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.DarkMode, contentDescription = "Dark Mode", tint = PrimaryFigmaGreen)
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
@@ -82,7 +76,6 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Logo Tengah
             Box(
                 modifier = Modifier
                     .size(80.dp)
@@ -95,7 +88,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Header
             Text(txtWelcome, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
             Text(
                 txtSubtitle,
@@ -107,12 +99,11 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Input Email
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(lblEmail, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { email = it; isError = false }, // Hilangkan error saat user mengetik ulang
+                    onValueChange = { email = it; isError = false },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text(phEmail, color = Color.LightGray) },
                     leadingIcon = { Icon(Icons.Default.Email, null, tint = Color.LightGray) },
@@ -124,26 +115,21 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Input Password (Sudah diperbaiki batas karakternya)
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(lblPin, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
                 OutlinedTextField(
                     value = pin,
-                    onValueChange = {
-                        pin = it // Batasan 4 karakter sudah dihapus
-                        isError = false
-                    },
+                    onValueChange = { pin = it; isError = false },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text(phPin, color = Color.LightGray) },
                     leadingIcon = { Icon(Icons.Default.LockOpen, null, tint = Color.LightGray) },
                     shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), // Ubah tipe keyboard
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color(0xFFF9F9F9), focusedContainerColor = Color(0xFFF9F9F9), unfocusedBorderColor = Color.Transparent)
                 )
             }
 
-            // Pesan Error jika email/pin salah
             if (isError) {
                 Text(
                     text = if (selectedLanguage == "EN") "Invalid Email or Password" else "Email atau Kata Sandi salah!",
@@ -153,7 +139,6 @@ fun LoginScreen(
                 )
             }
 
-            // Remember Me & Forgot Password
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -163,23 +148,33 @@ fun LoginScreen(
                     Checkbox(checked = checked, onCheckedChange = { checked = it }, colors = CheckboxDefaults.colors(checkedColor = PrimaryFigmaGreen))
                     Text(txtRemember, fontSize = 12.sp, color = Color.Gray)
                 }
-                TextButton(onClick = { }) {
+
+                // --- KINI MEMANGGIL STRATEGI NAVIGASI PINDAH HALAMAN KETIKA DIKLIK ---
+                TextButton(onClick = onNavigateToForgot) {
                     Text(txtForgot, fontSize = 12.sp, color = PrimaryFigmaGreen, fontWeight = FontWeight.Bold)
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Button Login
             Button(
                 onClick = {
-                    // Jalankan fungsi cek database di background
                     coroutineScope.launch {
                         val isValid = verifyLogin(email, pin)
                         if (isValid) {
-                            onLoginSuccess() // Masuk ke Home
+                            val editor = sharedPreferences.edit()
+                            if (checked) {
+                                editor.putString("saved_email", email)
+                                editor.putBoolean("remember_me", true)
+                            } else {
+                                editor.remove("saved_email")
+                                editor.putBoolean("remember_me", false)
+                            }
+                            editor.apply()
+
+                            onLoginSuccess()
                         } else {
-                            isError = true // Munculkan tulisan merah
+                            isError = true
                         }
                     }
                 },
@@ -196,14 +191,13 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Image Card Section
             Card(
                 modifier = Modifier.fillMaxWidth().height(140.dp),
                 shape = RoundedCornerShape(24.dp)
             ) {
                 Box {
                     Image(
-                        painter = painterResource(id = com.example.freshgoapp.R.drawable.ic_launcher_background), // Jangan lupa ganti gambar aslimu
+                        painter = painterResource(id = com.example.freshgoapp.R.drawable.ic_launcher_background),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -218,10 +212,9 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            //Tombol Buat Akun
             Text(txtNew, fontSize = 12.sp, color = Color.Gray)
             OutlinedButton(
-                onClick = onNavigateToRegister, // Mengarahkan ke halaman Register
+                onClick = onNavigateToRegister,
                 modifier = Modifier.padding(top = 8.dp).fillMaxWidth(0.6f),
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(1.dp, Color.LightGray)

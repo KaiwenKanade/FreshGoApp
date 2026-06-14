@@ -2,8 +2,8 @@ package com.example.freshgoapp.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.freshgoapp.data.InventoryDao
-import com.example.freshgoapp.data.InventoryItem
+import com.example.freshgoapp.data.Local.InventoryDao
+import com.example.freshgoapp.data.Local.InventoryItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

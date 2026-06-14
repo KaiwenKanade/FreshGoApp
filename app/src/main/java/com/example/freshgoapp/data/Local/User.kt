@@ -1,4 +1,4 @@
-package com.example.freshgoapp.data
+package com.example.freshgoapp.data.Local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
